@@ -114,7 +114,6 @@ export class ProductsController {
     return this.productsService.getCategoryTotalPrice(+categoryId);
   }
 
-  // Добавленные эндпоинты
   @Post('bulk-delete')
   @ApiOperation({ summary: 'Bulk delete products' })
   @ApiBody({ type: [Number] })

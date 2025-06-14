@@ -5,8 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // Настройка CORS
+  
   app.enableCors({
     origin: ['http://localhost:3000', 'http://localhost:3001', 'https://adminkafuzics.netlify.app'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -16,15 +15,14 @@ async function bootstrap() {
     optionsSuccessStatus: 204
   });
 
-  // Валидация
+
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
-    forbidNonWhitelisted: true, // Временно отключите для теста
+    forbidNonWhitelisted: true, 
     transform: true,
-    disableErrorMessages: false, // Для отладки
+    disableErrorMessages: false, 
   }));
 
-  // Настройка Swagger
   const config = new DocumentBuilder()
     .setTitle('E-Commerce API')
     .setDescription('API for products and categories management')
