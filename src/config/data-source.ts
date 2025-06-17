@@ -1,10 +1,7 @@
 import { DataSource } from 'typeorm';
-import * as dotenv from 'dotenv';
 import { resolve } from 'path';
 import { Category } from '../categories/entities/category.entity';
 import { Product } from '../products/entities/product.entity';
-
-dotenv.config({ path: resolve(__dirname, '../.env') });
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -13,15 +10,15 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres1',
   password: process.env.DB_PASSWORD || 'G0xmciPahwAa4G0AbQ9bmrBAxFGGq5gv',
   database: process.env.DB_NAME || 'pc_components_xnjj',
-  entities: [Category, Product], 
-  migrations: [__dirname + '/migrations/*{.ts,.js}'],
-  synchronize: false, 
+  entities: [Category, Product],
+  migrations: [resolve(__dirname, '../migrations/*{.ts,.js}')],
+  synchronize: false,
   ssl: true,
   extra: {
     ssl: {
-      rejectUnauthorized: false, 
+      rejectUnauthorized: false,
     },
   },
-  logging: true, 
+  logging: true,
   migrationsRun: true, 
 });

@@ -23,7 +23,7 @@
     
 
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:run": "npm run typeorm migration:run -- -d ./config/src/data-source.ts",
+    "migration:run": "npm run typeorm migration:run -d src/config/data-source.ts",
     "migration:revert": "npm run typeorm migration:revert -- -d ./src/data-source.ts",
     "migration:generate": "npm run typeorm migration:generate -- -d ./src/data-source.ts -n",
     "migration:show": "cross-env DB_HOST=localhost npm run typeorm migration:show -- -d ./src/data-source.ts",
