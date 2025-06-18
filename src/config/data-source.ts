@@ -12,7 +12,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'pc_components_xnjj',
   entities: [Category, Product],
   migrations: [resolve(__dirname, '../migrations/*{.ts,.js}')],
-  synchronize: true,
+  synchronize: false,
   ssl: true,
   extra: {
     ssl: {
