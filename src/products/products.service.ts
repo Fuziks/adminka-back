@@ -143,26 +143,6 @@ export class ProductsService {
     );
   }
 
-  async getTotalPrice(): Promise<number> {
-    try {
-      const result = await this.productsRepository.query(
-        'SELECT calculate_total_products_price() as total'
-      );
-      return parseFloat(result[0]?.total) || 0;
-    } catch (error) {
-      console.error('Error calculating total price:', error);
-      return 0;
-    }
-  }
-
-  async getCategoryTotalPrice(categoryId: number): Promise<number> {
-    const result = await this.productsRepository.query(
-      'SELECT calculate_category_products_price($1) as total',
-      [categoryId]
-    );
-    return parseFloat(result[0].total);
-  }
-
   async bulkDelete(ids: number[]): Promise<void> {
     await this.productsRepository.delete(ids);
   }
