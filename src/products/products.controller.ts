@@ -91,29 +91,6 @@ export class ProductsController {
     );
   }
 
-  @Get('total-price')
-  @ApiOperation({ summary: 'Get total price of all products' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Returns total price of all products',
-    type: Number 
-  })
-  async getTotalPrice(): Promise<number> {
-    return this.productsService.getTotalPrice();
-  }
-
-  @Get('category/:categoryId/total-price')
-  @ApiOperation({ summary: 'Get total price of products in category' })
-  @ApiParam({ name: 'categoryId', type: Number })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Returns total price of products in category',
-    type: Number 
-  })
-  async getCategoryTotalPrice(@Param('categoryId') categoryId: string): Promise<number> {
-    return this.productsService.getCategoryTotalPrice(+categoryId);
-  }
-
   @Post('bulk-delete')
   @ApiOperation({ summary: 'Bulk delete products' })
   @ApiBody({ type: [Number] })
