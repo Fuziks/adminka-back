@@ -55,4 +55,12 @@ export class CategoriesController {
   async remove(@Param('id') id: string): Promise<void> {
     await this.categoriesService.remove(+id);
   }
+
+  @Post('bulk-delete')
+  @ApiOperation({ summary: 'Bulk delete categories' })
+  @ApiBody({ type: [Number] })
+  @ApiResponse({ status: 200, description: 'Categories deleted successfully' })
+  async bulkDelete(@Body() body: { ids: number[] }): Promise<void> {
+    return this.categoriesService.bulkDelete(body.ids);
+  }
 }

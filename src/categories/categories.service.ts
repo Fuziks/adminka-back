@@ -80,4 +80,19 @@ export class CategoriesService {
     
     await this.categoriesRepository.remove(category);
   }
+
+  async bulkDelete(ids: number[]): Promise<void> {
+    const productsCount = await this.productsRepository
+      .createQueryBuilder('product')
+      .where('product.categoryId IN (:...ids)', { ids })
+      .getCount();
+
+    if (productsCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete categories - ${productsCount} products are associated with these categories`
+      );
+    }
+
+    await this.categoriesRepository.delete(ids);
+  }
 }

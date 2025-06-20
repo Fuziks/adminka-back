@@ -49,7 +49,6 @@ export class ProductsService {
   }
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    // Проверка на существование товара с таким же именем
     const existingProduct = await this.productsRepository.findOne({
       where: { name: createProductDto.name },
     });
@@ -80,7 +79,6 @@ export class ProductsService {
   async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
     const product = await this.findOne(id);
     
-    // Если обновляется имя, проверяем на дубликат
     if (updateProductDto.name && updateProductDto.name !== product.name) {
       const existingProduct = await this.productsRepository.findOne({
         where: { name: updateProductDto.name },
