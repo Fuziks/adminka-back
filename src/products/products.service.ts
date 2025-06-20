@@ -1,17 +1,13 @@
 import { Injectable, Logger, InternalServerErrorException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Category } from '../categories/entities/category.entity';
-import { BulkUpdateDto } from './dto/bulk-update.dto';
 
 @Injectable()
 export class ProductsService {
-  search(arg0: string): Product[] | PromiseLike<Product[]> {
-    throw new Error('Method not implemented.');
-  }
   private readonly logger = new Logger(ProductsService.name);
   
   constructor(
@@ -22,47 +18,46 @@ export class ProductsService {
   ) {}
 
   async findAllPaginated(
-    page: number,
-    limit: number,
-    sort: string,
-    order: 'ASC' | 'DESC',
-  ): Promise<{ data: Product[]; total: number; page: number; limit: number }> {
-    const validSortFields = ['id', 'name', 'price', 'brand'];
-    const sortField = validSortFields.includes(sort) ? sort : 'id';
-    
-    const [data, total] = await this.productsRepository.findAndCount({
-      relations: ['category'],
-      order: { [sortField]: order },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
+    page: number = 1,
+    limit: number = 10,
+    sort: string = 'id',
+    order: 'ASC' | 'DESC' = 'ASC'
+  ): Promise<{ data: Product[]; total: number }> {
+    try {
+      const [data, total] = await this.productsRepository.findAndCount({
+        relations: ['category'],
+        order: { [sort]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+      return { data, total };
+    } catch (error) {
+      this.logger.error(`Failed to get products: ${error.message}`);
+      throw new InternalServerErrorException('Failed to fetch products');
+    }
   }
 
   async findOne(id: number): Promise<Product> {
-    if (isNaN(id)) {
-      throw new BadRequestException('Invalid product ID');
-    }
-    
     const product = await this.productsRepository.findOne({
       where: { id },
       relations: ['category'],
     });
-    
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
-    
     return product;
   }
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
+    // Проверка на существование товара с таким же именем
+    const existingProduct = await this.productsRepository.findOne({
+      where: { name: createProductDto.name },
+    });
+
+    if (existingProduct) {
+      throw new BadRequestException(`Товар с названием "${createProductDto.name}" уже существует.`);
+    }
+
     const product = new Product();
     product.name = createProductDto.name;
     product.brand = createProductDto.brand;
@@ -74,9 +69,7 @@ export class ProductsService {
       });
       
       if (!category) {
-        throw new NotFoundException(
-          `Category with ID ${createProductDto.categoryId} not found`,
-        );
+        throw new NotFoundException(`Category with ID ${createProductDto.categoryId} not found`);
       }
       product.category = category;
     }
@@ -87,6 +80,17 @@ export class ProductsService {
   async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
     const product = await this.findOne(id);
     
+    // Если обновляется имя, проверяем на дубликат
+    if (updateProductDto.name && updateProductDto.name !== product.name) {
+      const existingProduct = await this.productsRepository.findOne({
+        where: { name: updateProductDto.name },
+      });
+      
+      if (existingProduct) {
+        throw new BadRequestException(`Товар с названием "${updateProductDto.name}" уже существует.`);
+      }
+    }
+
     if (updateProductDto.categoryId !== undefined) {
       if (updateProductDto.categoryId) {
         const category = await this.categoriesRepository.findOne({
@@ -172,5 +176,12 @@ export class ProductsService {
     }
 
     await this.productsRepository.update(ids, updateOptions);
+  }
+
+  async checkNameExists(name: string): Promise<{ exists: boolean }> {
+    const product = await this.productsRepository.findOne({
+      where: { name },
+    });
+    return { exists: !!product };
   }
 }

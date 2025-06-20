@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { Product } from './entities/product.entity';
@@ -44,6 +44,7 @@ export class ProductsController {
   @ApiOperation({ summary: 'Create new product' })
   @ApiBody({ type: CreateProductDto })
   @ApiResponse({ status: 201, description: 'The product has been successfully created', type: Product })
+  @ApiResponse({ status: 400, description: 'Product with this name already exists' })
   create(@Body() createProductDto: CreateProductDto): Promise<Product> {
     return this.productsService.create(createProductDto);
   }
@@ -54,6 +55,7 @@ export class ProductsController {
   @ApiBody({ type: UpdateProductDto })
   @ApiResponse({ status: 200, description: 'The product has been successfully updated', type: Product })
   @ApiResponse({ status: 404, description: 'Product not found' })
+  @ApiResponse({ status: 400, description: 'Product with this name already exists' })
   update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
@@ -112,4 +114,12 @@ export class ProductsController {
       }
     );
   }
-} 
+
+  @Get('check-name/:name')
+  @ApiOperation({ summary: 'Check if product name exists' })
+  @ApiParam({ name: 'name', type: String })
+  @ApiResponse({ status: 200, description: 'Returns whether name exists', type: Object })
+  async checkNameExists(@Param('name') name: string): Promise<{ exists: boolean }> {
+    return this.productsService.checkNameExists(name);
+  }
+}
