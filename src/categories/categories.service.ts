@@ -1,13 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Product } from '../products/entities/product.entity';
 
 @Injectable()
 export class CategoriesService {
+  private readonly logger = new Logger(CategoriesService.name);
+
   constructor(
     @InjectRepository(Category)
     private categoriesRepository: Repository<Category>,
@@ -16,33 +17,29 @@ export class CategoriesService {
   ) {}
 
   async findAllPaginated(
-    page: number,
-    limit: number,
-    sort: string,
-    order: 'ASC' | 'DESC',
-  ): Promise<{ data: Category[]; total: number; page: number; limit: number }> {
-    const validSortFields = ['id', 'name'];
-    const sortField = validSortFields.includes(sort) ? sort : 'id';
-    
-    const [data, total] = await this.categoriesRepository.findAndCount({
-      relations: ['products'],
-      order: { [sortField]: order },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
+    page: number = 1,
+    limit: number = 10,
+    sort: string = 'id',
+    order: 'ASC' | 'DESC' = 'ASC'
+  ): Promise<{ data: Category[]; total: number }> {
+    try {
+      const [data, total] = await this.categoriesRepository.findAndCount({
+        relations: ['products'],
+        order: { [sort]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+      return { data, total };
+    } catch (error) {
+      this.logger.error(`Failed to get categories: ${error.message}`);
+      throw new InternalServerErrorException('Failed to fetch categories');
+    }
   }
 
   async findOne(id: number): Promise<Category> {
-    const category = await this.categoriesRepository.findOne({ 
+    const category = await this.categoriesRepository.findOne({
       where: { id },
-      relations: ['products']
+      relations: ['products'],
     });
     if (!category) {
       throw new NotFoundException(`Category with ID ${id} not found`);
@@ -51,17 +48,17 @@ export class CategoriesService {
   }
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    const category = this.categoriesRepository.create(createCategoryDto);
-    return this.categoriesRepository.save(category);
-  }
+    const existingCategory = await this.categoriesRepository.findOne({
+      where: { name: createCategoryDto.name },
+    });
 
-  async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
-    const category = await this.categoriesRepository.findOneBy({ id });
-    if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+    if (existingCategory) {
+      throw new BadRequestException(`Category with name "${createCategoryDto.name}" already exists.`);
     }
-  
-    category.name = updateCategoryDto.name;
+
+    const category = new Category();
+    category.name = createCategoryDto.name;
+
     return this.categoriesRepository.save(category);
   }
 
@@ -94,5 +91,12 @@ export class CategoriesService {
     }
 
     await this.categoriesRepository.delete(ids);
+  }
+
+  async checkNameExists(name: string): Promise<{ exists: boolean }> {
+    const category = await this.categoriesRepository.findOne({
+      where: { name },
+    });
+    return { exists: !!category };
   }
 }
